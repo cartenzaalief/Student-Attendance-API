@@ -1,5 +1,6 @@
 const UsersModel = require("../model/users");
 const sequelize = require("sequelize");
+const { hashPassword, createToken } = require("../config/encript");
 
 module.exports = {
   getData: async (req, res) => {
@@ -22,10 +23,11 @@ module.exports = {
         },
       });
 
-      console.log("cek", data);
+      console.log(data);
 
       if (data.length > 0) {
-        return res.status(200).send(data);
+        let token = createToken({ ...data[0] });
+        return res.status(200).send({ ...data[0], token });
       } else {
         return res.status(200).send({
           success: false,
@@ -85,6 +87,24 @@ module.exports = {
           return res.status(500).send(err);
         }
       }
+    } catch (err) {
+      console.log(err);
+      return res.status(500).send(err);
+    }
+  },
+  keepLogin: async (req, res) => {
+    console.log(req.decript);
+    try {
+      let data = await UsersModel.findAll({
+        where: {
+          id: req.decript.dataValues.id,
+        },
+      });
+
+      console.log(data);
+
+      let token = createToken({ ...data[0] });
+      return res.status(200).send({ ...data[0], token });
     } catch (err) {
       console.log(err);
       return res.status(500).send(err);
