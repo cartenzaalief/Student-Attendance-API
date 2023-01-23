@@ -1,6 +1,7 @@
 const UsersModel = require("../model/users");
 const sequelize = require("sequelize");
 const { hashPassword, createToken } = require("../config/encript");
+const bcrypt = require("bcrypt");
 
 module.exports = {
   getData: async (req, res) => {
@@ -19,15 +20,21 @@ module.exports = {
       let data = await UsersModel.findAll({
         where: {
           NIS,
-          password,
         },
       });
 
-      console.log(data);
-
       if (data.length > 0) {
-        let token = createToken({ ...data[0] });
-        return res.status(200).send({ ...data[0], token });
+        let checkPass = bcrypt.compareSync(password, data[0].dataValues.password);
+        
+        if (checkPass) {
+          let token = createToken({ ...data[0].dataValues });
+          return res.status(200).send({ ...data[0].dataValues, token });
+        } else {
+          return res.status(200).send({
+            success: false,
+            message: "Password incorrect"
+          })
+        }
       } else {
         return res.status(200).send({
           success: false,
@@ -52,6 +59,8 @@ module.exports = {
       password,
     } = req.body;
 
+    let newPass = hashPassword(password);
+
     try {
       let data = await UsersModel.findAll({
         where: {
@@ -75,7 +84,7 @@ module.exports = {
             address,
             phone,
             email,
-            password,
+            password: newPass,
           });
           return res.status(200).send({
             success: true,
@@ -97,14 +106,14 @@ module.exports = {
     try {
       let data = await UsersModel.findAll({
         where: {
-          id: req.decript.dataValues.id,
+          id: req.decript.id,
         },
       });
 
       console.log(data);
 
-      let token = createToken({ ...data[0] });
-      return res.status(200).send({ ...data[0], token });
+      let token = createToken({ ...data[0].dataValues });
+      return res.status(200).send({ ...data[0].dataValues, token });
     } catch (err) {
       console.log(err);
       return res.status(500).send(err);

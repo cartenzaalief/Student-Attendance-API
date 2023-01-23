@@ -6,6 +6,7 @@ module.exports = {
     const salt = bcrypt.genSaltSync(10);
 
     const hashPass = bcrypt.hashSync(password, salt);
+    
     return hashPass;
   },
   createToken: (payload, expired = "24h") => {
